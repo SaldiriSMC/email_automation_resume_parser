@@ -111,22 +111,18 @@ def process_resume(pdf_path=None, email_body=None):
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    print(f"Received request with content-type: {request.content_type}")
-    if request.content_type == 'application/json':
+    try:
+        # Extract the URL from the request data
         data = request.json
-        resume_content = data.get('resume', '')
-        if resume_content:
-            process_resume(resume_content)
-            return 'Data Processed and Google Sheet Updated'
+        url = data.get('url')
 
-        email_body = data.get('email_body', '')
-        if email_body:
-            process_resume(pdf_path=None, email_body=email_body)
-            return 'Data Processed and Google Sheet Updated'
-
-        return 'Pdf file or email body not provided'
-
-    return 'Invalid content type, expected application/json'
+        if url:
+            process_resume(url)
+            return 'URL Processed and Google Sheet Updated', 200
+        else:
+            return 'Invalid Data', 400
+    except Exception as e:
+        return str(e), 500
 
 
 @app.route('/')
