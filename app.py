@@ -1,10 +1,13 @@
 import os
 import re
+import uuid
 
-import fitz
+import fitz  # PyMuPDF
+import requests
 import serverless_wsgi
 import spacy
-from flask import Flask, request
+from flask import Flask
+from flask import request, jsonify
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -12,7 +15,7 @@ app = Flask(__name__)
 
 nlp = spacy.load('en_core_web_sm')
 SERVICE_ACCOUNT_FILE = os.getenv('SVC_ACCOUNT_FILE', default='teak-trainer-429810-m8-e5c5b04a7c29.json')
-SCOPES = os.getenv('GOOGLE_SCOPES', default='https://www.googleapis.com/auth/spreadsheets')
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
@@ -72,13 +75,15 @@ def extract_industries(doc):
 
 
 def extract_projects(doc):
-    projects = []
-    project_pattern = re.compile(r'(?i)\b(Project|Title|Summary|Overview):?\s*(.*)')
+    project_titles = []
+    title_pattern = re.compile(r'(?i)(?:^|\n)❖\s*(.*?)(?=\n|$)')
     for sent in doc.sents:
-        match = project_pattern.search(sent.text)
+        match = title_pattern.search(sent.text)
         if match:
-            projects.append(match.group(2).strip())
-    return ', '.join(set(projects)) if projects else "Unknown"
+            project_title = match.group(1).strip()
+            if project_title:
+                project_titles.append(project_title)
+    return ', '.join(set(project_titles)) if project_titles else "Unknown"
 
 
 def append_to_google_sheet(values):
@@ -108,22 +113,42 @@ def process_resume(pdf_path=None, email_body=None):
 
     values = [candidate_name, title_position, skills, industries, projects_titles]
     result = append_to_google_sheet(values)
+    return result
 
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        # Extract the URL from the request data
         data = request.json
         url = data.get('url')
 
         if url:
-            process_resume(url)
-            return 'URL Processed and Google Sheet Updated', 200
+            response = requests.get(url)
+            response.raise_for_status()
+
+            filename = os.path.basename(url)
+            if not filename or filename.find('.') == -1:
+                filename = f"{uuid.uuid4()}.pdf"
+
+            if not os.path.exists('downloads'):
+                os.makedirs('downloads')
+
+            filepath = os.path.join('downloads', filename)
+
+            with open(filepath, 'wb') as file:
+                file.write(response.content)
+
+            text = process_resume(filepath)
+
+            os.remove(filepath)
+
+            return jsonify({'message': 'URL Processed and Google Sheet Updated', 'extracted_text': text}), 200
         else:
-            return 'Invalid Data', 400
+            return jsonify({'error': 'Invalid Data'}), 400
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Failed to download file: {str(e)}'}), 400
     except Exception as e:
-        return str(e), 500
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/')
