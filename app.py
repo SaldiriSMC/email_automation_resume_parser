@@ -2,6 +2,7 @@ import os
 import re
 
 import fitz
+import serverless_wsgi
 import spacy
 from flask import Flask, request
 from google.oauth2 import service_account
@@ -130,5 +131,5 @@ def index():
     return 'Hi'
 
 
-if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+def handler(event, context):
+    return serverless_wsgi.handle_request(app, event, context)
