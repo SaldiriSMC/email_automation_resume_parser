@@ -29,16 +29,16 @@ This project is a Flask application designed to process resumes sent via email w
 ## Challenges
 
 ### Selecting Library to Extract Data
-Initially, there were limitations based on the resume format. Various libraries were tested to find the most suitable one that could handle different resume formats effectively.
+- Initially, there were limitations based on the resume format. Various libraries were tested to find the most suitable one that could handle different resume formats effectively.
 
 ### Testing and Optimization
-The application was tested on different resume formats to optimize the extraction process. Continuous improvements were made to enhance the accuracy of data extraction.
+- The application was tested on different resume formats to optimize the extraction process. Continuous improvements were made to enhance the accuracy of data extraction.
 
 ### Handling Large Libraries
-Due to the large size of the libraries used, we shifted from a simple Lambda function to uploading a `.zip` file to S3 and then deploying via Docker ECR. This approach helped manage the library size effectively.
+- Due to the large size of the libraries used, we shifted from a simple Lambda function to uploading a `.zip` file to S3 and then deploying via Docker ECR. This approach helped manage the library size effectively.
 
 ### Lambda Write Limitations
-AWS Lambda has a limitation on writing to the server. To address this, we used in-memory processing to handle files during the execution.
+- AWS Lambda has a limitation on writing to the server. To address this, we used in-memory processing to handle files during the execution.
 
 ## Setup and Deployment
 
@@ -46,6 +46,8 @@ AWS Lambda has a limitation on writing to the server. To address this, we used i
 - Python 3.9
 - AWS account with Lambda setup
 - Google Cloud project with a service account that has access to Google Sheets API
+- Docker
+- Amazon ECR
 
 ### Install Dependencies
 ```
@@ -62,14 +64,23 @@ export S3_BUCKET_NAME=your-s3-bucket-name
 ```
 python app.py
 ```
-### Deploying to AWS Lambda
-Create a ZIP file of your project:
-```
-zip -r deployment-package.zip .
-```
-Upload the ZIP file to AWS Lambda and configure the handler as app.handler.
 
-Set the necessary environment variables in the AWS Lambda configuration.
+## Deploying to AWS Lambda using Docker ECR
+### Build the Docker image:
+```
+docker build -t your-docker-image-name .
+```
+### Tag the Docker image:
+```
+docker tag your-docker-image-name:latest aws_account_id.dkr.ecr.region.amazonaws.com/your-docker-image-name:latest
+```
+### Push the Docker image to ECR:
+```
+docker push aws_account_id.dkr.ecr.region.amazonaws.com/your-docker-image-name:latest
+```
+### Create an AWS Lambda function and configure it to use the Docker image from ECR.
+
+### Set the necessary environment variables in the AWS Lambda configuration.
 
 ### Usage
 Once deployed, you can send a POST request to the webhook endpoint with the URL of the PDF file to be processed. The application will extract the relevant information from the PDF and update the Google Sheets file accordingly.
