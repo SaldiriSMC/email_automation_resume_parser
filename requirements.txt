@@ -24,13 +24,15 @@ pandas==2.2.2
 preshed==3.0.9
 protobuf==5.27.2
 python-dotenv==1.0.1
+PyMuPDF==1.24.7
 pytz==2024.1
 requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9
 serverless-wsgi==3.0.4
 six==1.16.0
-spacy==3.1.7
+spacy
+pydantic
 srsly==2.4.8
 thinc==8.0.17
 tqdm==4.66.4
@@ -42,3 +44,5 @@ urllib3==2.2.2
 wasabi==0.10.1
 Werkzeug==3.0.3
 wrapt==1.16.0
+nltk==3.6.7
+textblob==0.15.3
