@@ -95,3 +95,5 @@ Handling large files in-memory might be constrained by the available memory in t
 Dependence on external services (AWS, Google Sheets) means that any downtime or service changes could affect the application's performance.
 ### Security: 
 Ensuring the security and privacy of the extracted data and handling of service account credentials is critical and needs continuous monitoring and improvements.
+### Resume Formats
+The application might struggle with highly formatted or non-standard resume layouts. While it performs well with standard formats, unusual or complex designs may reduce the accuracy of data extraction.
